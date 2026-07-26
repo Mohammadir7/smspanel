@@ -1,169 +1,96 @@
-:root,
-[data-theme="dark"] {
-  --bg: #0f1117;
-  --bg-elevated: #171a22;
-  --bg-input: #1e2230;
-  --border: #2a3042;
-  --text: #e8eaef;
-  --text-muted: #9aa3b5;
-  --primary: #6366f1;
-  --primary-hover: #818cf8;
-  --success: #22c55e;
-  --warn: #f59e0b;
-  --error: #ef4444;
-  --step: #38bdf8;
-  --radius: 10px;
-  --font: "Vazirmatn", system-ui, sans-serif;
-}
-
-[data-theme="light"] {
-  --bg: #f4f5f8;
-  --bg-elevated: #ffffff;
-  --bg-input: #ffffff;
-  --border: #d8dde8;
-  --text: #12141a;
-  --text-muted: #5c6578;
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-}
-
+/* Global Styles */
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+  direction: rtl;
+  min-height: 100vh;
 }
 
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
+html {
   direction: rtl;
 }
 
-a {
-  color: var(--primary);
+/* Color Palette */
+:root {
+  --primary: #667eea;
+  --primary-dark: #5568d3;
+  --primary-light: #8fa3f1;
+  --secondary: #764ba2;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --neutral-50: #f9fafb;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #d1d5db;
+  --neutral-400: #9ca3af;
+  --neutral-500: #6b7280;
+  --neutral-600: #4b5563;
+  --neutral-700: #374151;
+  --neutral-800: #1f2937;
+  --neutral-900: #111827;
 }
 
-button,
-input,
-textarea {
-  font-family: inherit;
-}
-
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-.app-body {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
-
-.sidebar {
-  width: 240px;
-  background: var(--bg-elevated);
-  border-left: 1px solid var(--border);
-  padding: 20px 16px;
-  flex-shrink: 0;
-}
-
-.main {
-  flex: 1;
-  padding: 24px 32px;
-  overflow: auto;
-  min-width: 960px;
-}
-
-.nav-link {
-  display: block;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-  color: var(--text-muted);
-  text-decoration: none;
-  margin-bottom: 4px;
-}
-
-.nav-link.active,
-.nav-link:hover {
-  background: var(--bg-input);
-  color: var(--text);
-}
-
-.card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-}
-
-.btn {
-  border: none;
-  border-radius: var(--radius);
-  padding: 10px 18px;
-  cursor: pointer;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
+  line-height: 1.2;
 }
 
-.btn-primary {
-  background: var(--primary);
-  color: #fff;
+h1 {
+  font-size: 2.25rem;
 }
 
-.btn-primary:hover {
-  background: var(--primary-hover);
+h2 {
+  font-size: 1.875rem;
 }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
+h3 {
+  font-size: 1.5rem;
 }
 
-.input,
-.textarea {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px;
-  color: var(--text);
+p {
+  line-height: 1.6;
+  color: var(--neutral-600);
 }
 
-.textarea {
-  min-height: 140px;
-  resize: vertical;
+/* Buttons */
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.3s ease;
 }
 
-.label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-  color: var(--text-muted);
+/* Forms */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: 1rem;
 }
 
-.row {
-  display: flex;
-  gap: 16px;
-  align-items: center;
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.muted {
-  color: var(--text-muted);
-  font-size: 0.85rem;
+::-webkit-scrollbar-track {
+  background: var(--neutral-100);
 }
 
-.footer-dev {
-  margin-top: auto;
-  padding: 12px 32px;
-  border-top: 1px solid var(--border);
-  font-size: 0.8rem;
-  color: var(--text-muted);
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-400);
 }
