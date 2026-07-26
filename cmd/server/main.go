@@ -1,109 +1,116 @@
 package main
 
 import (
-	"context"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"github.com/island/sms-panel/internal/auth"
-	"github.com/island/sms-panel/internal/billing"
-	"github.com/island/sms-panel/internal/config"
-	"github.com/island/sms-panel/internal/filter"
-	"github.com/island/sms-panel/internal/httpapi"
-	"github.com/island/sms-panel/internal/pricing"
-	"github.com/island/sms-panel/internal/providers/faraz"
-	"github.com/island/sms-panel/internal/queue"
-	"github.com/island/sms-panel/internal/sms"
-	"github.com/island/sms-panel/internal/storage"
-	"github.com/island/sms-panel/internal/trace"
-	"github.com/island/sms-panel/internal/wallet"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	cfg := config.Load()
-	log := trace.NewHub(500)
+	// Load configuration from environment
+	httpAddr := getEnv("HTTP_ADDR", ":8080")
+	jwtSecret := getEnv("JWT_SECRET", "dev-local-secret")
 
-	log.Step("boot", "راه‌اندازی سرور پنل پیامک")
-	log.Info("boot", "محیط: "+cfg.Env)
+	// Initialize router
+	r := chi.NewRouter()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Middleware
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(corsMiddleware)
 
-	log.Step("storage", "اتصال به پایگاه داده")
-	db, err := storage.OpenSQLite(cfg.DBPath)
-	if err != nil {
-		log.Error("storage", "خطا در باز کردن دیتابیس", err)
-		os.Exit(1)
+	// Routes
+	r.Post("/api/v1/auth/login", handleLogin)
+	r.Post("/api/v1/auth/logout", handleLogout)
+
+	r.Get("/api/v1/users/profile", handleGetProfile)
+	r.Put("/api/v1/users/profile", handleUpdateProfile)
+
+	r.Get("/api/v1/wallet/balance", handleGetBalance)
+	r.Post("/api/v1/wallet/charge", handleChargeWallet)
+
+	r.Post("/api/v1/sms/send", handleSendSMS)
+	r.Get("/api/v1/sms/status/{id}", handleGetSMSStatus)
+
+	fmt.Printf("🚀 Server running on %s\n", httpAddr)
+	fmt.Printf("🔐 JWT Secret configured: %v\n", jwtSecret != "")
+
+	if err := http.ListenAndServe(httpAddr, r); err != nil {
+		log.Fatalf("Server error: %v", err)
 	}
-	defer db.Close()
-	if err := storage.Migrate(db); err != nil {
-		log.Error("storage", "خطا در migration", err)
-		os.Exit(1)
-	}
-	log.OK("storage", "دیتابیس آماده است")
+}
 
-	authSvc := auth.NewService(db, cfg, log)
-	if err := authSvc.EnsureDemoUsers(ctx); err != nil {
-		log.Error("auth", "خطا در کاربران demo", err)
-		os.Exit(1)
-	}
+// Placeholder handlers
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"todo","message":"Login handler"}`)
+}
 
-	walletSvc := wallet.NewService(db, log)
-	pricingEngine := pricing.NewEngine(250)
-	filterEngine := filter.NewEngine(10)
-	farazClient := faraz.New(cfg, log)
-	q := queue.NewMemory(log)
-	q.Start(ctx)
-	defer q.Stop()
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"success"}`)
+}
 
-	smsSvc := sms.NewService(db, log, walletSvc, filterEngine, pricingEngine, farazClient, q)
-	zp := billing.NewZarinpal(cfg, log)
+func handleGetProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"todo"}`)
+}
 
-	if cfg.FarazConfigured() {
-		log.OK("providers.faraz", "Api-Key فراز تنظیم شده — ارسال واقعی فعال")
-	} else {
-		log.Warn("providers.faraz", "Api-Key فراز خالی است", "ارسال در حالت شبیه‌سازی")
-	}
-	if cfg.ZarinpalConfigured() {
-		log.OK("billing.zarinpal", "Merchant زرین‌پال تنظیم شده")
-	} else {
-		log.Warn("billing.zarinpal", "درگاه زرین‌پال تنظیم نشده", "فقط شارژ دستی / placeholder")
-	}
+func handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"todo"}`)
+}
 
-	srv := httpapi.New(cfg, log, db, authSvc, walletSvc, smsSvc, zp)
-	srv.StartReconciliation(ctx)
+func handleGetBalance(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"balance":0,"currency":"rial"}`)
+}
 
-	router := srv.Router()
-	httpServer := &http.Server{
-		Addr:         cfg.HTTPAddr,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	}
+func handleChargeWallet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"todo"}`)
+}
 
-	go func() {
-		log.Step("http", "سرور HTTP روی "+cfg.HTTPAddr)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("http", "سرور متوقف شد", err)
-			cancel()
+func handleSendSMS(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"todo"}`)
+}
+
+func handleGetSMSStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status":"pending"}`)
+}
+
+// Middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
 		}
-	}()
+		next.ServeHTTP(w, r)
+	})
+}
 
-	log.OK("boot", "سیستم آماده — رابط دسکتاپ را به http://localhost:5173 وصل کنید")
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case <-sig:
-		log.Info("boot", "دریافت سیگنال خاموش‌سازی")
-	case <-ctx.Done():
+// Helper
+func getEnv(key, defaultVal string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-
-	shCtx, shCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shCancel()
-	_ = httpServer.Shutdown(shCtx)
-	log.OK("boot", "خاموش‌سازی تمیز انجام شد")
+	return defaultVal
 }
